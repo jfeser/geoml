@@ -37,16 +37,25 @@ val tangent : t -> Point.t -> Line.t
 
 val intersects : t -> t -> bool
 
-val intersection : t -> t -> Point.t list
+module Intersection : sig
+  type t = None | Tangent of Point.t | Intersect of Point.t * Point.t
+  [@@deriving compare, hash, sexp]
+
+  val to_list : t -> Point.t list
+
+  val intersects : t -> bool
+end
+
+val intersection : t -> t -> Intersection.t
 (** returns the list of intersection points of two circle. It can be:
     - [] when the circles dont intersect
     - [p] when the circles are tangent in p
     - [a;b] when the circles intersect, a and b are the intersection points*)
 
-val intersect_line : t -> Line.t -> Point.t list
+val intersect_line : t -> Line.t -> Intersection.t
 (** same as intersection but with a circle and a line *)
 
-val segment_intersection : t -> Segment.t -> Point.t list
+val segment_intersection : t -> Segment.t -> Intersection.t
 (** same as intersection but with a circle and a segment *)
 
 val circumscribed : Point.t -> Point.t -> Point.t -> t

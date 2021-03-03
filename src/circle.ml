@@ -41,6 +41,24 @@ let intersects (c1 : t) (c2 : t) =
   let open Float in
   Point.sq_distance c1.center c2.center < (c1.radius +. c2.radius) ** 2.
 
+module Intersection = struct
+  type t = None | Tangent of Point.t | Intersect of Point.t * Point.t
+  [@@deriving compare, hash, sexp]
+
+  let of_list = function
+    | [] -> None
+    | [ x ] -> Tangent x
+    | [ x; x' ] -> Intersect (x, x')
+    | _ -> failwith "expected two or fewer points"
+
+  let to_list = function
+    | None -> []
+    | Tangent x -> [ x ]
+    | Intersect (x, x') -> [ x; x' ]
+
+  let intersects = function None -> false | Tangent _ | Intersect _ -> true
+end
+
 (** line_intersection takes a circle and line and returns the list of the
     intersection points. (can be [], [a] or [a,b] *)
 let intersect_line (c : t) (l : Line.t) =
@@ -51,6 +69,7 @@ let intersect_line (c : t) (l : Line.t) =
       let a = x -. cx in
       Math.solve 1. 0. ((a *. a) -. (c.radius *. c.radius))
       |> List.map ~f:(fun y -> Point.make x y |> Point.translate 0. cy)
+      |> Intersection.of_list
   | _ ->
       (* we go to origin *)
       let l_2 = translate (-.cx) (-.cy) l in
@@ -68,16 +87,18 @@ let intersect_line (c : t) (l : Line.t) =
       (* and translate back the result to the first coordinates*)
       |> List.map ~f:(fun x ->
              Point.make x ((a *. x) +. b) |> Point.translate cx cy)
+      |> Intersection.of_list
 
 let segment_intersection c (s : Segment.t) =
   let open Float in
   let a, b = s in
   let ab = Vector.of_points a b in
   let dab2 = Point.sq_distance a b in
-  Segment.to_line s |> intersect_line c
+  Segment.to_line s |> intersect_line c |> Intersection.to_list
   |> List.filter ~f:(fun p ->
          let dp = Vector.dot_product ab (Vector.of_points a p) in
          0. <= dp && dp <= dab2)
+  |> Intersection.of_list
 
 (** tangent c p returns the tangent of circle c going through point p.
     p must lie on c's boundary *)

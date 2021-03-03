@@ -47,6 +47,8 @@ val intersect_line : t -> Line.t -> Point.t list
 (** returns the intersection points of a rectangle and a line.
     returns [] if they don't intersect.*)
 
+val intersects_circle : t -> Circle.t -> bool
+
 val segments : t -> Segment.t list
 (** returns a list of length 4 containing the segments of the rectangle*)
 

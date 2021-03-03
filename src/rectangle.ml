@@ -87,6 +87,11 @@ let intersect_line r l =
   in
   match inter with [ Some a; Some b ] -> [ a; b ] | _ -> []
 
+let intersects_circle r c =
+  Circle.contains c (bottom_left_corner r)
+  || List.exists (segments r) ~f:(fun s ->
+         Circle.segment_intersection c s |> Circle.Intersection.intersects)
+
 let centroid r = top_right_corner r |> Point.center (bottom_left_corner r)
 
 let random_point ((p, w, h) : t) =
