@@ -1,27 +1,26 @@
 open Graphics
-
 module List = Caml.List
 module Array = Caml.Array
 
 (* conversion utilities *)
 let iof = Int.of_float
+
 let soi = Int.to_string
 
 let point2pixel p = Point.(iof p.x, iof p.y)
 
 let moveto_p p =
-  let x,y = point2pixel p in
+  let x, y = point2pixel p in
   moveto x y
 
 let lineto_p p =
-  let x,y = point2pixel p in
+  let x, y = point2pixel p in
   lineto x y
 
 (* screen handling *)
 let open_graph size_x size_y title =
-  let sx = size_x |> iof |> soi
-  and sy = size_y |> iof |> soi in
-  open_graph (" "^sx^"x"^sy);
+  let sx = size_x |> iof |> soi and sy = size_y |> iof |> soi in
+  open_graph (" " ^ sx ^ "x" ^ sy);
   set_window_title title
 
 let fill_screen rgb =
@@ -31,24 +30,23 @@ let fill_screen rgb =
 let clear = clear_graph
 
 let screen () =
- let sx = Float.of_int (size_x ())
- and sy = Float.of_int (size_y ()) in
- Rectangle.make Point.orig sx sy
+  let sx = Float.of_int (size_x ()) and sy = Float.of_int (size_y ()) in
+  Rectangle.make Point.orig sx sy
 
 let get_image size_x size_y =
-  let sx = size_x |> iof
-  and sy = size_y |> iof in
+  let sx = size_x |> iof and sy = size_y |> iof in
   get_image 0 0 sx sy
 
 let red_c i = i / 0x10000
+
 let green_c i = Int.rem (i / 0x100) 0x100
+
 let blue_c i = Int.rem i 0x100
 
 let to_ppm img file_name =
   let open Caml.Printf in
   let arr = dump_image img in
-  let row = Array.length arr |> soi
-  and col = Array.length arr.(0) |> soi in
+  let row = Array.length arr |> soi and col = Array.length arr.(0) |> soi in
   let oc = Caml.open_out file_name in
   fprintf oc "%s\n" "P3";
   fprintf oc "%s %s\n" col row;
@@ -56,92 +54,86 @@ let to_ppm img file_name =
   Array.iter
     (fun line ->
       Array.iter
-	(fun e ->
-	  fprintf oc "%i %i %i " (red_c e) (green_c e) (blue_c e)
-	)
-	line;
-      fprintf oc "\n";
-    )
+        (fun e -> fprintf oc "%i %i %i " (red_c e) (green_c e) (blue_c e))
+        line;
+      fprintf oc "\n")
     arr;
   Caml.close_out oc
 
 (* drawing *)
-let draw_point ?(lw=1) p col =
+let draw_point ?(lw = 1) p col =
   set_color col;
   set_line_width lw;
-  let x,y = point2pixel p in
+  let x, y = point2pixel p in
   fill_circle x y lw
 
-let draw_segment ?(lw=1) s col =
+let draw_segment ?(lw = 1) s col =
   set_line_width lw;
   set_color col;
-  let p1,p2 = (Segment.extr1 s),(Segment.extr2 s) in
+  let p1, p2 = (Segment.extr1 s, Segment.extr2 s) in
   moveto_p p1;
   lineto_p p2
 
-let draw_vector ?(lw=1) v d col =
-   draw_segment ~lw:lw (Segment.make d (Vector.move_to v d)) col
+let draw_vector ?(lw = 1) v d col =
+  draw_segment ~lw (Segment.make d (Vector.move_to v d)) col
 
-let draw_dashed_segment ?(lw=1) s col =
+let draw_dashed_segment ?(lw = 1) s col =
   let step = 5. in
   let nb = Segment.size s /. step in
   let v = Vector.of_points (Segment.extr1 s) (Segment.extr2 s) in
-  let v = Vector.scal_mult (1./.nb) v in
+  let v = Vector.scal_mult (1. /. nb) v in
   let rec loop p nb =
     let open Float in
-    if nb > 0. then begin
-        draw_vector ~lw:lw v p col;
-        loop (Vector.move_to (Vector.add v v) p) (nb -. 2.)
-      end
+    if nb > 0. then (
+      draw_vector ~lw v p col;
+      loop (Vector.move_to (Vector.add v v) p) (nb -. 2.) )
   in
   loop (Segment.extr1 s) nb
 
-let draw_line ?(lw=1) ?(dashed=false) l col =
-  let sx = Float.of_int (size_x ())
-  and sy = Float.of_int (size_y ()) in
+let draw_line ?(lw = 1) ?(dashed = false) l col =
+  let sx = Float.of_int (size_x ()) and sy = Float.of_int (size_y ()) in
   let r = Rectangle.make Point.orig sx sy in
   let inter = Rectangle.intersect_line r l in
   match inter with
-  | [a;b] -> (if dashed then draw_dashed_segment else draw_segment)
-               ~lw:lw (Segment.make a b) col
+  | [ a; b ] ->
+      (if dashed then draw_dashed_segment else draw_segment)
+        ~lw (Segment.make a b) col
   | _ -> ()
 
-let draw_constraint ?(lw=1) c col =
+let draw_constraint ?(lw = 1) c col =
   let open Constraint in
   let l = get_border c
-  and dashed = match (get_comp c) with
-    | Lt | Gt -> true
-    | _ ->  false
-  in draw_line ~lw:lw ~dashed:dashed l col
+  and dashed = match get_comp c with Lt | Gt -> true | _ -> false in
+  draw_line ~lw ~dashed l col
 
 (* shapes with non null area *)
-let draw_circle ?(lw=1) c col =
+let draw_circle ?(lw = 1) c col =
   let open Circle in
   set_color col;
   set_line_width lw;
-  let x,y = point2pixel c.center in
+  let x, y = point2pixel c.center in
   draw_circle x y (c.radius |> iof)
 
-let fill_circle ?(lw=1) c col =
+let fill_circle ?(lw = 1) c col =
   let open Circle in
   set_color col;
   set_line_width lw;
-  let x,y = point2pixel c.center in
+  let x, y = point2pixel c.center in
   fill_circle x y (c.radius |> iof)
 
-let draw_triangle ?(lw=1) t col =
-  let (a,b,c) = Triangle.segments t in
-  List.iter (fun e -> draw_segment ~lw:lw e col) [a;b;c]
+let draw_triangle ?(lw = 1) t col =
+  let a, b, c = Triangle.segments t in
+  List.iter (fun e -> draw_segment ~lw e col) [ a; b; c ]
 
-let draw_rectangle ?(lw=1) r col =
+let draw_rectangle ?(lw = 1) r col =
   let open Rectangle in
-  List.iter (fun e -> draw_segment ~lw:lw e col) (segments r)
+  List.iter (fun e -> draw_segment ~lw e col) (segments r)
 
-let draw_ellipse ?(lw=1) e col =
+let draw_ellipse ?(lw = 1) e col =
   let open Ellipse in
   set_line_width lw;
   set_color col;
-  let x,y = point2pixel (center e) in
+  let x, y = point2pixel (center e) in
   draw_ellipse x y (iof (big_axis e)) (iof (small_axis e))
 
 (* let draw_regular ?(lw=1) rp col =
@@ -208,21 +200,20 @@ let draw_ellipse ?(lw=1) e col =
  *       fill_poly pts_array
  *     end *)
 
-let draw_polynom ?(lw=1) pol col =
+let draw_polynom ?(lw = 1) pol col =
   let open Float in
   set_color col;
   set_line_width lw;
   let open Polynom in
-  let step = 5.
-  and cur = ref 5. in
+  let step = 5. and cur = ref 5. in
   moveto 0 (iof (equation pol 0.));
-  while !cur < (of_int (size_x ())) do
+  while !cur < of_int (size_x ()) do
     lineto (iof !cur) (iof (equation pol !cur));
     cur := !cur +. step
   done;
   lineto (iof !cur) (iof (equation pol !cur))
 
-let draw_quadratic_curve ?(lw=1) curve col =
+let draw_quadratic_curve ?(lw = 1) curve col =
   set_color col;
   set_line_width lw;
   let open Curve.Quadratic in
@@ -230,7 +221,7 @@ let draw_quadratic_curve ?(lw=1) curve col =
   List.iter lineto_p (points curve 50);
   lineto_p (ending curve)
 
-let draw_cubic_curve ?(lw=1) curve col =
+let draw_cubic_curve ?(lw = 1) curve col =
   set_color col;
   set_line_width lw;
   let open Curve.Cubic in
@@ -238,11 +229,11 @@ let draw_cubic_curve ?(lw=1) curve col =
   List.iter lineto_p (points curve 50);
   lineto_p (ending curve)
 
-let draw_bspline ?(lw=1) curve col =
+let draw_bspline ?(lw = 1) curve col =
   set_color col;
   set_line_width lw;
   let open Curve.BSpline in
-  let a = (points curve 200) in
+  let a = points curve 200 in
   moveto_p (List.hd a);
   List.iter lineto_p (List.tl a);
   let c = Circle.make (List.hd a) 5. in

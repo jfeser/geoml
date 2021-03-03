@@ -1,9 +1,8 @@
 (** This module provides basic operation over the linear equation type *)
 
 type t = private
-	 | X of float
-	 | Y of float * float
-(** the linear equation type *)
+  | X of float
+  | Y of float * float  (** the linear equation type *)
 
 val print : Formatter.t -> t -> unit
 (** printer *)
@@ -11,9 +10,9 @@ val print : Formatter.t -> t -> unit
 val to_string : t -> string
 (** to string *)
 
-type error = | Parallel of t * t
-	           | Same_coordinates of Point.t
-(** the type of errors *)
+type error =
+  | Parallel of t * t
+  | Same_coordinates of Point.t  (** the type of errors *)
 
 exception Error of error
 (** the type of exceptions concerning this module *)
@@ -44,11 +43,11 @@ val is_vertical : t -> bool
 (** [is_vertical l], is [true] if l has an equation of the form: x=cst,
     where cst is a constant float*)
 
-val is_horizontal: t -> bool
-  (** is_horizontal l, returns true if l has an equation of the form: y=cst,
+val is_horizontal : t -> bool
+(** is_horizontal l, returns true if l has an equation of the form: y=cst,
       where cst is a constant float*)
 
-val get_coeff : t -> (float*float*float)
+val get_coeff : t -> float * float * float
 (** returns a tuple (a,b,c) with respect to the equation of line, as: ax + by + c = 0*)
 
 val x_from_y : t -> float -> float

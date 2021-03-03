@@ -1,9 +1,7 @@
 (** Circle manipulation *)
 
-type t = private {
-  center:Point.t;
-  radius:float;
-} [@@deriving compare, hash, sexp]
+type t = private { center : Point.t; radius : float }
+[@@deriving compare, hash, sexp]
 
 val make : Point.t -> float -> t
 
@@ -15,13 +13,13 @@ val translate : float -> float -> t -> t
 
 val point_reflection : Point.t -> t -> t
 
+val rotate : t -> Point.t -> float -> t
 (** radian rotation. rotate c p f returns the rotated circle of c with p as
     rotation center and f a angle in radian *)
-val rotate : t -> Point.t -> float -> t
 
+val rotate_angle : t -> Point.t -> float -> t
 (** degree rotation. rotate c p f returns the rotated circle of c with p as
     rotation center and f a angle in degree *)
-val rotate_angle : t -> Point.t -> float -> t
 
 val contains : t -> Point.t -> bool
 
@@ -33,9 +31,9 @@ val proj_x : t -> float * float
 
 val proj_y : t -> float * float
 
+val tangent : t -> Point.t -> Line.t
 (** tangent c p returns the tangent of circle c going through point p.
     p must lie on c's boundary, otherwise behaviour is unspecified *)
-val tangent : t -> Point.t -> Line.t
 
 val intersects : t -> t -> bool
 

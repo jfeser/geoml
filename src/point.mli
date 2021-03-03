@@ -1,9 +1,6 @@
 (** Module for 2d points manipulation *)
 
-type t = private {
-  	x : float;
-  	y : float;
-           } [@@deriving compare, hash, sexp]
+type t = private { x : float; y : float } [@@deriving compare, hash, sexp]
 
 val make : float -> float -> t
 
@@ -37,13 +34,13 @@ val translate : float -> float -> t -> t
 
 val transform : Affine.t -> t -> t
 
-(** point reflection. reflection p1 p2 returns the symerical point of p2 with respect to p1 *)
 val point_reflection : t -> t -> t
+(** point reflection. reflection p1 p2 returns the symerical point of p2 with respect to p1 *)
 
-(** point rotation. rotate p1 p2 f returns the rotation point of p2 with p1 as center and f a angle in radian *)
 val rotate : t -> t -> float -> t
+(** point rotation. rotate p1 p2 f returns the rotation point of p2 with p1 as center and f a angle in radian *)
 
-(** point rotation. rotate p1 p2 f returns the rotation point of p2 with p1 as center and f a angle in degree *)
 val rotate_angle : t -> t -> float -> t
+(** point rotation. rotate p1 p2 f returns the rotation point of p2 with p1 as center and f a angle in degree *)
 
 val print : Formatter.t -> t -> unit

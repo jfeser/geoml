@@ -1,6 +1,7 @@
 (** Segment manipulation *)
 
 type t = Point.t * Point.t
+
 val make : Point.t -> Point.t -> t
 
 val extr1 : t -> Point.t
@@ -11,11 +12,11 @@ val center : t -> Point.t
 
 val equation : t -> float -> Point.t
 
-(** returns the square size of a segment *)
 val sq_size : t -> float
+(** returns the square size of a segment *)
 
-(** returns the size of a segment *)
 val size : t -> float
+(** returns the size of a segment *)
 
 val scale_x : t -> float -> t
 
