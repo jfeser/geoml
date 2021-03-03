@@ -3,7 +3,7 @@
 type t = private {
   center:Point.t;
   radius:float;
-}
+} [@@deriving compare, hash, sexp]
 
 val make : Point.t -> float -> t
 
@@ -71,5 +71,5 @@ val random_point : t -> Point.t
 val random_point_perimeter : t -> Point.t
 (** returns a randomly and uniformly chosen point that lies on the permieter of the circle *)
 
-val print : Format.formatter -> t -> unit
+val print : Formatter.t -> t -> unit
 (** printer *)

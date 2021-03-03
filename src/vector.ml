@@ -1,10 +1,12 @@
+open Float
+
 type t =
   {
     dx : float ;
     dy : float ;
   }
 
-let print fmt {dx;dy} = Format.fprintf fmt "{dx=%f; dy=%f}" dx dy
+let print fmt {dx;dy} = Caml.Format.fprintf fmt "{dx=%f; dy=%f}" dx dy
 
 let make dx dy = {dx;dy}
 

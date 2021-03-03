@@ -1,8 +1,9 @@
-type t = Point.t * float * float
+type t = Point.t * float * float [@@deriving compare, hash, sexp]
 
 let make p w h : t = (p,w,h)
 
 let of_diagonal p1 p2 : t =
+  let open Float in
   let open Point in
   let x,w = if p1.x < p2.x then (p1.x,p2.x-.p1.x) else (p2.x, p1.x-.p2.x)
   and y,h = if p1.y < p2.y then (p1.y,p2.y-.p1.y) else (p2.y, p1.y-.p2.y) in
@@ -29,6 +30,7 @@ let point_reflection pivot ((p,w,h):t) =
   translate (-.w) (-.h) r
 
 let contains ((p,w,h):t) (pt:Point.t) =
+  let open Float in
   let open Point in
   p.x < pt.x && pt.x < (p.x+.w) &&
   p.y < pt.y && pt.y < (p.y+.h)
@@ -42,6 +44,7 @@ let proj_x r = let open Point in (bottom_left_corner r).x,(bottom_right_corner r
 let proj_y r = let open Point in (bottom_left_corner r).y,(top_right_corner r).y
 
 let intersects (s1:t) (s2:t) =
+  let open Float in
   let (a,b) = proj_x s1 and (c,d) = proj_x s2 in
   if (a<d && b>c) then
     let (a,b) = proj_y s1
@@ -56,9 +59,10 @@ let segments (r:t) =
   and s4 = Segment.make (top_right_corner r) (bottom_right_corner r) 
   in [s1;s2;s3;s4]
 
-let is_square ((_,w,h):t) = w=h
+let is_square ((_,w,h):t) = Float.(w=h)
 
 let encompass (p1,w,h) p2 =
+  let open Float in
   let l = min (Point.x_coord p1) (Point.x_coord p2)
   and t = max (Point.y_coord p1 +. h) (Point.y_coord p2)
   and r = max (Point.x_coord p1 +. w) (Point.x_coord p2)
@@ -68,14 +72,14 @@ let encompass (p1,w,h) p2 =
 let bounding (pts : Point.t list) : t =
   match pts with
   | [x] -> (x,0.,0.)
-  | x::tl -> List.fold_left encompass (x,0.,0.) tl
+  | x::tl -> List.fold_left ~f:encompass ~init:(x,0.,0.) tl
   | [] -> invalid_arg "can't build a bounding rectangle with an empty list"
      
 let intersect_line r l =
   let inter =
     segments r
-  |> List.map (fun e -> Segment.intersect_line e l)
-  |> List.filter (fun e -> e <> None) in
+  |> List.map ~f:(fun e -> Segment.intersect_line e l)
+  |> List.filter ~f:(Option.is_some) in
   match inter with
   | [Some a; Some b] -> [a;b]
   | _ -> []
@@ -89,4 +93,4 @@ let random_point ((p,w,h):t) =
   make x y
 
 let print fmt ((bl,w,h):t) =
-  Format.fprintf fmt "bottom left corner:%a, width=%f, height:%f" Point.print bl w h
+  Caml.Format.fprintf fmt "bottom left corner:%a, width=%f, height:%f" Point.print bl w h

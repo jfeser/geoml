@@ -1,10 +1,12 @@
+open Float
+
 type t = Point.t * Point.t * Point.t
 
 let as_points t = t
 let tri_map f ((pa,pb,pc):t) = ((f pa),(f pb),(f pc))
 
 let print fmt (a, b, c) =
-  Format.fprintf fmt "(%a, %a, %a)" Point.print a
+  Caml.Format.fprintf fmt "(%a, %a, %a)" Point.print a
     Point.print b Point.print c
 
 let tri_exists f (pa,pb,pc) = (f pa) || (f pb) || (f pc)
@@ -13,7 +15,7 @@ let tri_find f ((pa,pb,pc):t) =
   if f pa then pa
   else if f pb then pb
   else if f pc then pc
-  else raise Not_found
+  else raise Caml.Not_found
 
 let tri_forall f ((pa,pb,pc):t) = (f pa) && (f pb) && (f pc)
 
@@ -88,11 +90,11 @@ let intersects (s1:t) (s2:t) =
 
 let intersect_line (t:t) (l:Line.t) =
   let (a,b,c) = segments t in
-  List.fold_left (fun acc s ->
+  List.fold_left ~f:(fun acc s ->
     match  Segment.intersect_line s l with
     | None -> acc
     | Some p -> p::acc
-  ) [] [a;b;c]
+  ) ~init:[] [a;b;c]
 
 let is_isoscele ((a,b,c) :t) =
   Point.sq_distance a b = Point.sq_distance b c ||
@@ -115,7 +117,7 @@ let angles ((pa,pb,pc):t) =
   let open Vector in
   let a1 = angle_deg (of_points pa pb) (of_points pa pc) in
   let a2 = angle_deg (of_points pb pa) (of_points pb pc) in
-  let a1 = abs_float a1 and a2 = abs_float a2 in
+  let a1 = abs a1 and a2 = abs a2 in
   let a3 = 180. -. (a1+.a2) in
   (a1,a2,a3)
 

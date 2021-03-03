@@ -1,6 +1,7 @@
 (** solve a b c returns the list of the solutions for
     ax² + bx + c = 0 *)
 let solve a b c =
+  let open Float in
   let delta = b*.b -. 4. *. a *. c in
   if delta < 0. then []
   else
@@ -26,6 +27,6 @@ let int_sum i n f =
   done;
   !res
 
-let pi = 4.0 *. atan 1.
+let pi = 4.0 *. Float.atan 1.
 
 let deg_to_rad = 0.0174533

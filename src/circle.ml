@@ -1,8 +1,9 @@
 open Math
 
-type t = {center:Point.t; radius:float}
+type t = {center:Point.t; radius:float} [@@deriving compare, hash, sexp]
 
 let make center radius : t =
+  let open Float in
   if radius >= 0. then
     {center;radius}
   else invalid_arg "Circle.make:radius should be positive or zero"
@@ -24,6 +25,7 @@ let rotate_angle (c:t) p f =
   {c with center = Point.rotate_angle c.center p f}
 
 let contains (c:t) p =
+  let open Float in
   Point.sq_distance c.center p <= (c.radius*.c.radius)
 
 let area ({radius;_}:t) = pi *. radius *. radius
@@ -35,6 +37,7 @@ let proj_x (c:t) = let open Point in (c.center.x-.c.radius,c.center.x+.c.radius)
 let proj_y (c:t) = let open Point in (c.center.y-.c.radius,c.center.y+.c.radius)
 
 let intersects (c1:t) (c2:t) =
+  let open Float in
   (Point.sq_distance c1.center c2.center) < (c1.radius +. c2.radius) ** 2.
 
 (** line_intersection takes a circle and line and returns the list of the
@@ -46,7 +49,7 @@ let intersect_line (c:t) (l:Line.t) =
   | X(x) ->
      let a = x-.cx in
      Math.solve 1. 0. (a*.a -. c.radius*.c.radius)
-     |> List.map (fun y -> Point.make x y |> Point.translate 0. cy)
+     |> List.map ~f:(fun y -> Point.make x y |> Point.translate 0. cy)
   | _ ->
      (* we go to origin *)
      let l_2 = translate (-.cx) (-.cy) l in
@@ -59,13 +62,14 @@ let intersect_line (c:t) (l:Line.t) =
      Math.solve (a*.a+.1.) (2.*.a*.b) (b*.b -. c.radius*.c.radius)
      (* we calculate the associated y*)
      (* and translate back the result to the first coordinates*)
-     |> List.map (fun x -> Point.make x (a*.x+.b) |> Point.translate cx cy)
+     |> List.map ~f:(fun x -> Point.make x (a*.x+.b) |> Point.translate cx cy)
 
 let segment_intersection c (s:Segment.t) =
+  let open Float in
       let (a,b)= s in
       let ab = Vector.of_points a b in
       let dab2 = Point.sq_distance a b in
-      Segment.to_line s |> intersect_line c |> List.filter (fun p-> let dp = Vector.dot_product ab (Vector.of_points a p) in 0. <= dp && dp <= dab2)
+      Segment.to_line s |> intersect_line c |> List.filter ~f:(fun p-> let dp = Vector.dot_product ab (Vector.of_points a p) in 0. <= dp && dp <= dab2)
 
 (** tangent c p returns the tangent of circle c going through point p.
     p must lie on c's boundary *)
@@ -86,6 +90,7 @@ let circumscribed p1 p2 p3 =
   make center radius
 
 let incircle p1 p2 p3 =
+  let open Float in
   let a = Point.distance p1 p2
   and b = Point.distance p2 p3
   and c = Point.distance p3 p1 in
@@ -104,21 +109,21 @@ let bounding (pts : Point.t list) : t =
   let of_two x y pt =
     try
       [((x,pt),y);((y,pt),x)]
-      |> List.map (fun ((a,b),c) -> (([a;b],of_diameter a b),c))
-      |> List.find (fun ((_,circle),inner) -> contains circle inner)
+      |> List.map ~f:(fun ((a,b),c) -> (([a;b],of_diameter a b),c))
+      |> List.find_exn ~f:(fun ((_,circle),inner) -> contains circle inner)
       |> fst
-    with Not_found -> ([x;y;pt],(circumscribed x y pt))
+    with Caml.Not_found -> ([x;y;pt],(circumscribed x y pt))
   in
   let of_three x y z pt =
     let found =
       [((x,y),z); ((x,z),y); ((y,z),x)]
-      |> List.map (fun ((a,b),c) -> ((of_two a b pt),c))
-      |> List.filter (fun ((_,c),inner) -> contains c inner)
-      |> List.map fst
+      |> List.map ~f:(fun ((a,b),c) -> ((of_two a b pt),c))
+      |> List.filter ~f:(fun ((_,c),inner) -> contains c inner)
+      |> List.map ~f:fst
     in
-    List.fold_left (fun (e1,c1) (e2,c2) ->
-      if radius c1 < radius c2 then (e1,c1) else (e2,c2)
-    ) (List.hd found) (List.tl found)
+    List.fold_left ~f:(fun (e1,c1) (e2,c2) ->
+      if Float.(radius c1 < radius c2) then (e1,c1) else (e2,c2)
+    ) ~init:(List.hd_exn found) (List.tl_exn found)
   in
   let update set pt =
     match set with
@@ -130,11 +135,11 @@ let bounding (pts : Point.t list) : t =
   let rec mindisk l circle set pts =
     match pts with
     | [] -> circle
-    | h::tl when contains circle h || List.mem h set ->
+    | h::tl when contains circle h || List.mem ~equal:[%compare.equal:Point.t] set h ->
        mindisk l circle set tl
     | h::_ ->
        let (new_set,new_circle) = update set h in
-       List.filter (fun e -> List.mem e new_set |> not) l |>
+       List.filter ~f:(fun e -> List.mem ~equal:[%compare.equal:Point.t] new_set e |> not) l |>
        mindisk l new_circle new_set
   in
   match pts with
@@ -142,14 +147,16 @@ let bounding (pts : Point.t list) : t =
   | h::tl -> mindisk pts (make h 0.) [h] tl
 
 let random_point (c:t) : Point.t =
+  let open Float in
   let theta = Random.float pi *. 2. and r = Random.float (c.radius *. c.radius) |> sqrt  in
   let x = r *. (cos theta) and y = r *. (sin theta) in
   Point.(make (c.center.x+.x) (c.center.y +. y))
 
 let random_point_perimeter (c:t) : Point.t =
+  let open Float in
   let theta = Random.float pi *. 2. and r = c.radius  in
   let x = r *. (cos theta) and y = r *. (sin theta) in
   Point.(make (c.center.x+.x) (c.center.y +. y))
 
 let print fmt (c:t) =
-  Format.fprintf fmt "center:%a, radius=%f" Point.print c.center c.radius
+  Caml.Format.fprintf fmt "center:%a, radius=%f" Point.print c.center c.radius

@@ -5,7 +5,7 @@ type t = private
 	 | Y of float * float
 (** the linear equation type *)
 
-val print : Format.formatter -> t -> unit
+val print : Formatter.t -> t -> unit
 (** printer *)
 
 val to_string : t -> string
@@ -18,7 +18,7 @@ type error = | Parallel of t * t
 exception Error of error
 (** the type of exceptions concerning this module *)
 
-val print_error : Format.formatter -> error -> unit
+val print_error : Formatter.t -> error -> unit
 (** error printer*)
 
 val make : float -> float -> float -> t

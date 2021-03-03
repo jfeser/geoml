@@ -1,3 +1,5 @@
+open Float
+
 type t = {
   c00 : float; c10 : float;
   c01 : float; c11 : float;

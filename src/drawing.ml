@@ -1,8 +1,11 @@
 open Graphics
 
+module List = Caml.List
+module Array = Caml.Array
+
 (* conversion utilities *)
-let iof = int_of_float
-let soi = string_of_int
+let iof = Int.of_float
+let soi = Int.to_string
 
 let point2pixel p = Point.(iof p.x, iof p.y)
 
@@ -16,8 +19,8 @@ let lineto_p p =
 
 (* screen handling *)
 let open_graph size_x size_y title =
-  let sx = size_x |> iof |> string_of_int
-  and sy = size_y |> iof |> string_of_int in
+  let sx = size_x |> iof |> soi
+  and sy = size_y |> iof |> soi in
   open_graph (" "^sx^"x"^sy);
   set_window_title title
 
@@ -28,8 +31,8 @@ let fill_screen rgb =
 let clear = clear_graph
 
 let screen () =
- let sx = float_of_int (size_x ())
- and sy = float_of_int (size_y ()) in
+ let sx = Float.of_int (size_x ())
+ and sy = Float.of_int (size_y ()) in
  Rectangle.make Point.orig sx sy
 
 let get_image size_x size_y =
@@ -38,15 +41,15 @@ let get_image size_x size_y =
   get_image 0 0 sx sy
 
 let red_c i = i / 0x10000
-let green_c i = (i / 0x100) mod 0x100
-let blue_c i = i mod 0x100
+let green_c i = Int.rem (i / 0x100) 0x100
+let blue_c i = Int.rem i 0x100
 
 let to_ppm img file_name =
-  let open Printf in
+  let open Caml.Printf in
   let arr = dump_image img in
   let row = Array.length arr |> soi
   and col = Array.length arr.(0) |> soi in
-  let oc = open_out file_name in
+  let oc = Caml.open_out file_name in
   fprintf oc "%s\n" "P3";
   fprintf oc "%s %s\n" col row;
   fprintf oc "%s\n" "255";
@@ -60,7 +63,7 @@ let to_ppm img file_name =
       fprintf oc "\n";
     )
     arr;
-  close_out oc
+  Caml.close_out oc
 
 (* drawing *)
 let draw_point ?(lw=1) p col =
@@ -85,6 +88,7 @@ let draw_dashed_segment ?(lw=1) s col =
   let v = Vector.of_points (Segment.extr1 s) (Segment.extr2 s) in
   let v = Vector.scal_mult (1./.nb) v in
   let rec loop p nb =
+    let open Float in
     if nb > 0. then begin
         draw_vector ~lw:lw v p col;
         loop (Vector.move_to (Vector.add v v) p) (nb -. 2.)
@@ -93,8 +97,8 @@ let draw_dashed_segment ?(lw=1) s col =
   loop (Segment.extr1 s) nb
 
 let draw_line ?(lw=1) ?(dashed=false) l col =
-  let sx = float_of_int (size_x ())
-  and sy = float_of_int (size_y ()) in
+  let sx = Float.of_int (size_x ())
+  and sy = Float.of_int (size_y ()) in
   let r = Rectangle.make Point.orig sx sy in
   let inter = Rectangle.intersect_line r l in
   match inter with
@@ -140,78 +144,79 @@ let draw_ellipse ?(lw=1) e col =
   let x,y = point2pixel (center e) in
   draw_ellipse x y (iof (big_axis e)) (iof (small_axis e))
 
-let draw_regular ?(lw=1) rp col =
-  let open Polygon.Convex.Regular in
-  set_color col;
-  draw_point ~lw:3 rp.center col;
-  set_line_width lw;
-  moveto_p rp.fst;
-  fold_stop (fun _ _ -> true)
-    (fun _ _ current next ->
-       draw_point ~lw:3 current col;
-       set_line_width lw;
-       lineto_p next
-    ) () rp
-
-let draw_polygon ?(lw=1) (p: Polygon.t) col =
-  set_line_width lw;
-  set_color col;
-  moveto_p Polygon.(first_point p);
-  Polygon.fold (fun _ _ -> lineto_p) () p;
-  lineto_p (Polygon.first_point p)
-
-let fill_polygon ?(lw=1) (p: Polygon.t) col =
-  set_line_width lw;
-  set_color col;
-  let pts_array = List.map point2pixel (Polygon.to_list p) |> Array.of_list in
-  fill_poly pts_array
-
-let draw_convex_polygon ?(lw=1) (p: Polygon.Convex.t) col =
-  set_line_width lw;
-  set_color col;
-  let pts = Polygon.Convex.to_list p in
-  moveto_p (List.hd pts);
-  List.iter (fun current -> lineto_p current) (List.tl pts);
-  lineto_p (List.hd pts)
-
-let fill_convex_polygon ?(lw=1) (p: Polygon.Convex.t) col =
-  set_line_width lw;
-  set_color col;
-  let pts_array = List.map point2pixel (Polygon.Convex.to_list p)
-                  |> Array.of_list in
-  fill_poly pts_array
-
-let draw_polyhedron ?(lw=1) polyhedron col =
-  let open Polyhedron in
-  List.iter (fun c -> draw_constraint ~lw:lw c col) (get_constr polyhedron)
-
-let fill_polyhedron ?(lw=1) plhd col =
-  let open Polyhedron in
-  let r = screen() in
-  let s = Rectangle.([bottom_left_corner r;
-                      bottom_right_corner r;
-                      top_left_corner r;
-                      top_right_corner r;
-          ]) in
-  let screen_pol = Polygon.Convex.hull s in
-  let screen_phd = of_polygon screen_pol in
-  let plhd = intersection plhd screen_phd in
-  if not (Polyhedron.is_empty plhd) then begin
-      let plg = to_polygon plhd in
-      set_line_width lw;
-      set_color col;
-      let pts_array = List.map point2pixel (Polygon.Convex.to_list plg) |> Array.of_list in
-      fill_poly pts_array
-    end
+(* let draw_regular ?(lw=1) rp col =
+ *   let open Polygon.Convex.Regular in
+ *   set_color col;
+ *   draw_point ~lw:3 rp.center col;
+ *   set_line_width lw;
+ *   moveto_p rp.fst;
+ *   fold_stop (fun _ _ -> true)
+ *     (fun _ _ current next ->
+ *        draw_point ~lw:3 current col;
+ *        set_line_width lw;
+ *        lineto_p next
+ *     ) () rp
+ * 
+ * let draw_polygon ?(lw=1) (p: Polygon.t) col =
+ *   set_line_width lw;
+ *   set_color col;
+ *   moveto_p Polygon.(first_point p);
+ *   Polygon.fold (fun _ _ -> lineto_p) () p;
+ *   lineto_p (Polygon.first_point p)
+ * 
+ * let fill_polygon ?(lw=1) (p: Polygon.t) col =
+ *   set_line_width lw;
+ *   set_color col;
+ *   let pts_array = List.map point2pixel (Polygon.to_list p) |> Array.of_list in
+ *   fill_poly pts_array
+ * 
+ * let draw_convex_polygon ?(lw=1) (p: Polygon.Convex.t) col =
+ *   set_line_width lw;
+ *   set_color col;
+ *   let pts = Polygon.Convex.to_list p in
+ *   moveto_p (List.hd pts);
+ *   List.iter (fun current -> lineto_p current) (List.tl pts);
+ *   lineto_p (List.hd pts)
+ * 
+ * let fill_convex_polygon ?(lw=1) (p: Polygon.Convex.t) col =
+ *   set_line_width lw;
+ *   set_color col;
+ *   let pts_array = List.map point2pixel (Polygon.Convex.to_list p)
+ *                   |> Array.of_list in
+ *   fill_poly pts_array
+ * 
+ * let draw_polyhedron ?(lw=1) polyhedron col =
+ *   let open Polyhedron in
+ *   List.iter (fun c -> draw_constraint ~lw:lw c col) (get_constr polyhedron)
+ * 
+ * let fill_polyhedron ?(lw=1) plhd col =
+ *   let open Polyhedron in
+ *   let r = screen() in
+ *   let s = Rectangle.([bottom_left_corner r;
+ *                       bottom_right_corner r;
+ *                       top_left_corner r;
+ *                       top_right_corner r;
+ *           ]) in
+ *   let screen_pol = Polygon.Convex.hull s in
+ *   let screen_phd = of_polygon screen_pol in
+ *   let plhd = intersection plhd screen_phd in
+ *   if not (Polyhedron.is_empty plhd) then begin
+ *       let plg = to_polygon plhd in
+ *       set_line_width lw;
+ *       set_color col;
+ *       let pts_array = List.map point2pixel (Polygon.Convex.to_list plg) |> Array.of_list in
+ *       fill_poly pts_array
+ *     end *)
 
 let draw_polynom ?(lw=1) pol col =
+  let open Float in
   set_color col;
   set_line_width lw;
   let open Polynom in
   let step = 5.
   and cur = ref 5. in
   moveto 0 (iof (equation pol 0.));
-  while !cur < (float_of_int (size_x ())) do
+  while !cur < (of_int (size_x ())) do
     lineto (iof !cur) (iof (equation pol !cur));
     cur := !cur +. step
   done;

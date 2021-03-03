@@ -23,8 +23,8 @@ module List = struct
   let rec print_sep f sep fmt l =
     match l with
     | [] -> ()
-    | [e] -> Format.fprintf fmt "%a" f e
+    | [e] -> Caml.Format.fprintf fmt "%a" f e
     | h :: t ->
-      Format.fprintf fmt "%a%s%a" f h sep (print_sep f sep) t
+      Caml.Format.fprintf fmt "%a%s%a" f h sep (print_sep f sep) t
 
 end

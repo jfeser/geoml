@@ -15,6 +15,7 @@ module Quadratic = struct
   (** equation b t returns the value of the bezier equation b(t)
     with t belong to [0.;1.]*)
   let equation (p0,p1,p2) t =
+    let open Float in
     let b =
       let a = (1.-.t)*.(1.-.t)
       and b = 2.*.t *.(1.-.t)
@@ -31,9 +32,10 @@ module Quadratic = struct
   (** points b nb returns a list of nb points uniformly distributed
     on the bezier curve b.*)
   let points b nb =
-    if nb <= 0 then [] else
+    let open Float in
+    if Int.(nb <= 0) then [] else
       let res = ref [] and cur = ref 0.
-          and step = 1. /. (float_of_int nb) in
+          and step = 1. /. (of_int nb) in
       while !cur <= 1. do
         res := (equation b (!cur))::(!res);
         cur := !cur +. step
@@ -65,6 +67,7 @@ module Cubic = struct
 
   (** equation t with t belong to [0.;1.]*)
   let equation (p0,p1,p2,p3) t =
+    let open Float in
     let open Point in
     if t <= 1. && t >= 0. then
       let m_t = (1. -. t) *. (1. -. t)
@@ -96,9 +99,10 @@ module Cubic = struct
   (** points b nb returns a list of nb points uniformly distributed
     on the bezier curve b.*)
   let points b nb =
-    if nb <= 0 then [] else
+    let open Float in
+    if Int.(nb <= 0) then [] else
       let res = ref [] and cur = ref 0.
-          and step = 1. /. (float_of_int nb) in
+          and step = 1. /. (of_int nb) in
       while !cur <= 1. do
         res := (equation b (!cur))::(!res);
         cur := !cur +. step
@@ -121,7 +125,7 @@ module BSpline = struct
   (** make_eq pts nb_knots, makes a cardinal B-spline
      with a constant separation, 1/(nb_knots-1), between knots*)
   let make_eq pts nb_knots =
-    let step = 1. /. (float_of_int (nb_knots-1))
+    let step = 1. /. (Float.of_int (nb_knots-1))
     and tmp = ref 0.
     in
     let next () =
@@ -129,7 +133,7 @@ module BSpline = struct
       tmp:=!tmp +. step;
       res
     in
-    let k = Array.make nb_knots 0. |> Array.map (fun _ -> next())
+    let k = Array.create ~len:nb_knots 0. |> Array.map ~f:(fun _ -> next())
     in
     (*Array.iter (fun e -> print_float e; print_newline()) k;*)
     make pts k
@@ -139,13 +143,14 @@ module BSpline = struct
   let ending {control;_} = Common.List.last control
 
   let equation {knots;control;_} t =
+    let (<) = Float.(<) and (>) = Float.(>) and (<=) = Float.(<=) and (=) = Float.(=) in
     if t < 0. || t > 1. then failwith "t must be in [0. ; 1.]"
     else
       let rec s1 j d x = (x -. knots.(j-1)) /. (knots.(j+d-1) -. knots.(j-1)) *. bspl j (d-1) x
       and s2 j d x =(knots.(j+d) -. x)/.(knots.(j+d) -. knots.(j)) *. bspl (j+1) (d-1) x
       and bspl j d x =
-	      if j < 0 || j >= d then 0.
-	      else if d = 0
+	      if Int.(j < 0 || j >= d) then 0.
+	      else if Int.(d = 0)
 	      then (if knots.(j-1) <= x && x <= knots.(j) then 1. else 0.)
 	      else
 	        if knots.(j-1) = knots.(j+d)
@@ -157,24 +162,25 @@ module BSpline = struct
 	        else (s1 j d x)+.(s2 j d x)
       in
       let (xs,_) =
-	      (List.map Point.x_coord control),(List.map Point.y_coord control)
+	      (List.map ~f:Point.x_coord control),(List.map ~f:Point.y_coord control)
       and n = (List.length control)
       in
       let x = Math.float_sum 1 n (fun i ->
-	                let p = List.nth xs (i-1) in
+	                let p = List.nth_exn xs (i-1) in
 	                (bspl i n t) *. p
                 )
       and y = Math.float_sum 1 n (fun i ->
-	                let p = List.nth xs (i-1) in
+	                let p = List.nth_exn xs (i-1) in
 	                (bspl i n t) *. p
                 )
       in
       Point.make x y
 
   let points b nb =
-    if nb <= 0 then [] else
+    let open Float in
+    if Int.(nb <= 0) then [] else
       let res = ref [] and cur = ref 0.
-          and step = 1. /. (float_of_int nb) in
+          and step = 1. /. (of_int nb) in
       while !cur <= 1. do
 	      res := (equation b (!cur))::(!res);
 	      cur := !cur +. step

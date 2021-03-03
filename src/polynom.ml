@@ -8,8 +8,8 @@ let one = [1.]
 
 let equation p f =
   List.fold_left
-    (fun (pow,res) coeff -> (pow+.1.),(res+.coeff*.(f**pow)))
-    (0.,0.)
+    ~f:(fun (pow,res) coeff -> (pow+.1.),(res+.coeff*.(Float.(f**pow))))
+    ~init:(0.,0.)
     (List.rev p)
  |> snd
 
@@ -26,21 +26,22 @@ let derive p =
     match l with
     | [] -> res
     | _::tl when cur = 0 -> aux 1 res tl
-    | h::tl -> aux (cur+1) ((float cur) *. h::res) tl
+    | h::tl -> aux (cur+1) ((Float.of_int cur) *. h::res) tl
   in aux 0 zero (List.rev p)
 
 let print fmt p =
+  let open Caml.Format in
   let degree = ref 0 in
-  Format.pp_print_list
-    ~pp_sep:(fun f () -> Format.fprintf f " + ")
+  pp_print_list
+    ~pp_sep:(fun f () -> fprintf f " + ")
     (fun fmt e ->
       if !degree = 0 then
-	Format.fprintf fmt "%f" e
+	fprintf fmt "%f" e
       else if !degree = 1 then
-	Format.fprintf fmt "%fx" e
+	fprintf fmt "%fx" e
       else
-	Format.fprintf fmt "%fx^%i" e !degree;
-      incr degree;
+	fprintf fmt "%fx^%i" e !degree;
+      Int.incr degree;
     )
     fmt
     (List.rev p)

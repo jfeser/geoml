@@ -12,4 +12,4 @@ val add : t -> t -> t
 
 val derive : t -> t
 
-val print : Format.formatter -> t -> unit
+val print : Formatter.t -> t -> unit

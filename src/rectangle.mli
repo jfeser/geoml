@@ -1,6 +1,6 @@
 (** This module provides the basic operations over rectangles *)
 
-type t = private Point.t * float * float
+type t = private Point.t * float * float [@@deriving compare, hash, sexp]
 (** rectangle type *)
 
 val make : Point.t -> float -> float -> t
@@ -55,5 +55,5 @@ val centroid : t -> Point.t
 val random_point : t -> Point.t
 (** returns a randomly and uniformly chosen point of the rectangle *)
 
-val print : Format.formatter -> t -> unit  
+val print : Formatter.t -> t -> unit  
 (** printer *)

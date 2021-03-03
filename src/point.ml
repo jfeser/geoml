@@ -1,21 +1,16 @@
+open Float
+
 type t =
   {
     x : float ;
     y : float ;
-  }
+  } [@@deriving compare, hash, sexp]
 
 let make x y : t = {x; y}
 
 let ( % ) = make
 
 type point = t
-
-module Tbl = Hashtbl.Make (struct
-    type t = point
-    let equal = (==)
-    let hash = Hashtbl.hash
-  end)
-
 
 let orig = make 0. 0.
 
@@ -70,4 +65,4 @@ let rotate pivot p angle =
 
 let rotate_angle pivot p angle = rotate pivot p (angle *. Math.deg_to_rad)
 
-let print fmt {x;y} = Format.fprintf fmt "{x=%f; y=%f}" x y
+let print fmt {x;y} = Caml.Format.fprintf fmt "{x=%f; y=%f}" x y

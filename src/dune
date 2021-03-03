@@ -1,6 +1,8 @@
 (include_subdirs unqualified)
 
 (library
-  (public_name geoml)
-  (name geoml)
-  (libraries graphics))
+ (public_name geoml)
+ (name geoml)
+ (libraries base stdio graphics)
+ (flags :standard -open Base)
+ (preprocess (pps ppx_sexp_conv ppx_compare ppx_hash)))

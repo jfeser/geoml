@@ -58,4 +58,4 @@ val angle_deg : t -> t -> float
 (** reflect a b returns the reflected vector of a according to b *)
 val reflect : t -> t -> t
 
-val print : Format.formatter -> t -> unit
+val print : Formatter.t -> t -> unit

@@ -7,7 +7,9 @@ let neg = function
   | Gt  -> Leq
   | Geq -> Lt
 
-let compf = function
+let compf =
+  let open Float in
+  function
   | Lt  -> ( < )
   | Leq -> ( <= )
   | Gt  -> ( > )
@@ -24,7 +26,7 @@ let print fmt ((l,cmp):t) =
     | Geq -> ">="
   in
   let (a,b,c) = Line.get_coeff l in
-  Format.fprintf fmt "%fx + %fy + %f %s 0" a b c (comp_to_string cmp)
+  Caml.Format.fprintf fmt "%fx + %fy + %f %s 0" a b c (comp_to_string cmp)
 
 let make l comp : t = (l,comp)
 

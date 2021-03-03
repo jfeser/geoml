@@ -1,9 +1,10 @@
-open Math 
+open Float
 
 type t = {f1 : Point.t; f2 : Point.t; radius : float; 
 	  big_axis : float; small_axis : float}
 
-let make_bifocal p1 p2 radius = 
+let make_bifocal p1 p2 radius =
+  let open Float in
   let p1p2 = Point.distance p1 p2 in
   let big_axis = p1p2 +. 2. *. radius in
   let a = p1p2 /. 2. in
@@ -38,7 +39,7 @@ let scale_x {f1;f2;radius;_} f =
     if f1.y = f2.y then radius *. f
     else if f1.x = f2.x then radius
     else 
-      let ratio = (abs_float (f1.x -. f2.x)) /. (abs_float (f1.y -. f2.y)) in
+      let ratio = (abs (f1.x -. f2.x)) /. (abs (f1.y -. f2.y)) in
       radius *. ratio
   in
   let f1 = Point.scale_x f1 f and f2 =Point.scale_x f2 f in
@@ -50,7 +51,7 @@ let scale_y {f1;f2;radius;_} f =
     if f1.x = f2.x then radius *. f
     else if f1.y = f2.y then radius
     else 
-      let ratio = (abs_float (f1.y -. f2.y)) /. (abs_float (f1.x -. f2.x)) in
+      let ratio = (abs (f1.y -. f2.y)) /. (abs (f1.x -. f2.x)) in
       radius *. ratio
   in
   let f1 = Point.scale_y f1 f and f2 =Point.scale_y f2 f in

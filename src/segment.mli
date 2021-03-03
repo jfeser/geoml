@@ -3,8 +3,6 @@
 type t = Point.t * Point.t
 val make : Point.t -> Point.t -> t
 
-module Tbl: Hashtbl.S with type key = t
-
 val extr1 : t -> Point.t
 
 val extr2 : t -> Point.t

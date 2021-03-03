@@ -1,15 +1,19 @@
+open Float
+
 type t = X of float | Y of float * float (** linear equation type *)
 
-let print fmt = function
-  | Y(a,b) -> Format.fprintf fmt "y=%fx +. %f" a b
-  | X(c) -> Format.fprintf fmt "x=%f" c
+let print fmt =
+  let open Caml.Format in
+  function
+  | Y(a,b) -> fprintf fmt "y=%fx +. %f" a b
+  | X(c) -> fprintf fmt "x=%f" c
 
 type error = Parallel of t * t | Same_coordinates of Point.t
 
 exception Error of error
 
 let print_error fmt e =
-  let open Format in
+  let open Caml.Format in
   match e with
   | Parallel(l1,l2) -> fprintf fmt "Bad arguments : parallel lines %a and %a" print l1 print l2
   | Same_coordinates p -> fprintf fmt "Bad arguments : same coordinates %a" Point.print p
@@ -39,12 +43,12 @@ let get_coeff = function
   | X(c) -> (1., 0., -.c)
 
 let to_string = function
-  | X(a) -> ("x="^(string_of_float a))
-  | Y(a,b) -> ("y="^(string_of_float a)^"x+"^(string_of_float b))
+  | X(a) -> ("x="^(to_string a))
+  | Y(a,b) -> ("y="^(to_string a)^"x+"^(to_string b))
 
 let of_points (p1:Point.t) (p2:Point.t) =
   let open Point in
-  if p1 = p2 then
+  if [%compare.equal:Point.t] p1 p2 then
     raise (Error (Same_coordinates p1))
   else if p1.x = p2.x then
     X(p1.x)
